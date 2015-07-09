@@ -4,14 +4,20 @@ require 'net/http'
 require 'open-uri'
 require 'nokogiri'
 
-class LatLng
-  def initialize(lat, lng)
-    @latitude = lat
-    @longitude = lng
-  end
-end
 
 class GoogleDirections
+
+  class LatLng
+    def initialize(lat, lng)
+      @latitude = lat
+      @longitude = lng
+    end
+
+    def to_s
+      "#{@latitude},#{@longitude}"
+    end
+
+  end
 
   attr_reader :status, :doc, :xml, :origin, :destination, :options
 
@@ -27,10 +33,30 @@ class GoogleDirections
   def initialize(origin, destination, opts=@@default_options)
     @origin = origin
     @destination = destination
-    @options = opts.merge({:origin => @origin, :destination => @destination})
+
+    @options = opts
+    unless @origin.is_a?(LatLng) 
+      @options = @options.merge({:origin => @origin})
+    end
+
+    unless @destination.is_a?(LatLng)
+      @options = @options.merge({:destination => @destination})
+    end
 
     @url = @@base_url + '?' + @options.to_query
+
+    if @origin.is_a?(LatLng)
+      @url += '&origin=' + @origin.to_s
+    end
+
+    if @destination.is_a?(LatLng)
+      @url += '&destination=' + @destination.to_s
+    end
+    
+    p @url
+
     @xml = open(@url).read
+
     @doc = Nokogiri::XML(@xml)
     @status = @doc.css('status').text
   end
@@ -103,8 +129,8 @@ class Hash
 
   def to_query
     collect do |k, v|
-      if v.is_a?(LatLng)
-        "#{k}=#{v.latitude},#{v.longitude}"
+      if v.is_a?(GoogleDirections::LatLng)
+        "#{k}=#{v.to_s}"
       else
         "#{k}=#{CGI::escape(v.to_s)}"
       end
