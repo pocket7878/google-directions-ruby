@@ -4,6 +4,13 @@ require 'net/http'
 require 'open-uri'
 require 'nokogiri'
 
+class LatLng
+  def initialize(lat, lng)
+    @latitude = lat
+    @longitude = lng
+  end
+end
+
 class GoogleDirections
 
   attr_reader :status, :doc, :xml, :origin, :destination, :options
@@ -96,10 +103,12 @@ class Hash
 
   def to_query
     collect do |k, v|
-      "#{k}=#{CGI::escape(v.to_s)}"
+      if v.is_a?(LatLng)
+        "#{k}=#{v.latitude},#{v.longitude}"
+      else
+        "#{k}=#{CGI::escape(v.to_s)}"
+      end
     end * '&'
   end unless method_defined? :to_query
 
 end
-
-
