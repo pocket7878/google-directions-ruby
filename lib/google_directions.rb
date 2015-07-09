@@ -53,8 +53,6 @@ class GoogleDirections
       @url += '&destination=' + @destination.to_s
     end
     
-    p @url
-
     @xml = open(@url).read
 
     @doc = Nokogiri::XML(@xml)
